@@ -9,7 +9,7 @@ Quy trình làm bài:
 - Sau khi làm bài xong tạo Pull request vào Repo gốc
 - Gửi link PR và mô tả lại bài làm để nộp bài
 
-![Kanban Project Management Dashboard UI for SaaS Platform by Creliq UX/UI Design Agency on Dribbble](https://raw.githubusercontent.com/TechVanguardVn/Task-Management-System/refs/heads/main/images/demo.jpeg?token=GHSAT0AAAAAAEKMM6SCI4IUPXBTL6BSQ2YQ2VZDUNA)
+![Kanban Project Management Dashboard UI for SaaS Platform by Creliq UX/UI Design Agency on Dribbble](https://raw.githubusercontent.com/TechVanguardVn/Task-Management-System/refs/heads/main/images/demo.jpeg)
 
 ## 1. Mục tiêu dự án
 
