@@ -134,7 +134,7 @@ export default function LoginPage() {
           <Link to="/register">Đăng ký ngay</Link>
         </div>
 
-        <details className="demo-credentials-box">
+        <details className="demo-credentials-box" open>
           <summary>💡 Tài khoản mẫu dùng để test nhanh</summary>
           <div className="demo-credentials-content">
             <button
@@ -142,14 +142,7 @@ export default function LoginPage() {
               className="btn-fill-demo"
               onClick={() => fillCredentials('user01', 'Pass12345')}
             >
-              👉 user01 / Pass12345 (Vừa tạo)
-            </button>
-            <button
-              type="button"
-              className="btn-fill-demo"
-              onClick={() => fillCredentials('testuser', '123456')}
-            >
-              👉 testuser / 123456 (Dữ liệu mẫu database)
+              👉 user01 / Pass12345 (Tài khoản demo đầy đủ dữ liệu)
             </button>
           </div>
         </details>

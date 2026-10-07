@@ -5,8 +5,8 @@ const dashboardService = {
     return api.get('/dashboard/stats');
   },
 
-  getUpcoming() {
-    return api.get('/dashboard/upcoming');
+  getUpcomingTasks(limit = 5) {
+    return api.get('/dashboard/upcoming', { params: { limit } });
   },
 };
 
