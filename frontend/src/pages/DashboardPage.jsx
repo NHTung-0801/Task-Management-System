@@ -1,12 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 
-/**
- * DashboardPage (Trang Tổng quan Sprint 1)
- * - Hiển thị thông tin người dùng đang đăng nhập
- * - Kiểm chứng JWT Token đang hoạt động
- * - Nút Đăng xuất: xóa token và quay về trang Login
- */
 export default function DashboardPage() {
   const navigate = useNavigate();
   const user = authService.getCurrentUser() || {};
@@ -19,7 +13,6 @@ export default function DashboardPage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
-      {/* Navbar trên cùng */}
       <header
         style={{
           backgroundColor: '#FFFFFF',
@@ -77,9 +70,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Nội dung chính */}
       <main style={{ maxWidth: '960px', margin: '32px auto', padding: '0 16px' }}>
-        {/* Banner thông báo hoàn tất Sprint 1 */}
         <div
           style={{
             backgroundColor: '#ECFDF5',
@@ -103,7 +94,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Khung thông tin phiên đăng nhập (Phiên làm việc hiện tại) */}
         <div
           style={{
             backgroundColor: '#FFFFFF',
@@ -174,7 +164,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Khung hướng dẫn bước tiếp theo: Sprint 2 */}
         <div
           style={{
             backgroundColor: '#FFFFFF',

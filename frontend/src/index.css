@@ -1,9 +1,3 @@
-/* ============================================
-   Reset & Biến toàn cục (CSS Custom Properties)
-   - File này là design system tối thiểu
-   - Khi code giao diện, chỉ cần dùng var(--tên-biến)
-   ============================================ */
-
 :root {
   /* --- Bảng màu chính (tông pastel theo README demo) --- */
   --color-primary: #4F46E5;       /* Indigo — nút chính, liên kết */

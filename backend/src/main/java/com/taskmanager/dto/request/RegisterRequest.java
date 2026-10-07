@@ -5,17 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-/**
- * Dữ liệu nhận từ client khi đăng ký tài khoản.
- * POST /api/auth/register
- *
- * @NotBlank → Không được null và không được chỉ chứa khoảng trắng
- * @Size     → Giới hạn độ dài chuỗi (min/max)
- * @Email    → Phải đúng định dạng email (có @ và domain)
- *
- * Các annotation @Valid trong Controller sẽ kích hoạt validation này.
- * Nếu vi phạm → Spring tự động trả lỗi 400 Bad Request.
- */
 @Data
 public class RegisterRequest {
 
@@ -31,6 +20,5 @@ public class RegisterRequest {
     @Size(min = 6, max = 100, message = "Mật khẩu phải từ 6 ký tự trở lên")
     private String password;
 
-    // Không bắt buộc — người dùng có thể bỏ qua
     private String fullName;
 }

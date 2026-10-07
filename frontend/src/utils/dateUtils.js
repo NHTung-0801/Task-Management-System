@@ -1,7 +1,3 @@
-// ============================================
-// Hàm tiện ích xử lý ngày tháng
-// ============================================
-
 /**
  * Định dạng ngày theo kiểu dd/MM/yyyy (phổ biến ở Việt Nam)
  * @param {string} dateString - Chuỗi ngày (ISO format hoặc yyyy-MM-dd)

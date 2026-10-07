@@ -3,12 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 import './Auth.css';
 
-/**
- * Trang Đăng ký (RegisterPage)
- * - Quản lý form nhập liệu: username, email, password, fullName
- * - Client-side validation: định dạng email, độ dài password >= 6
- * - Gọi authService.register() -> tự động lưu token và điều hướng vào Dashboard
- */
 export default function RegisterPage() {
   const navigate = useNavigate();
 
@@ -35,14 +29,12 @@ export default function RegisterPage() {
   const validate = () => {
     const newErrors = {};
 
-    // Validate username
     if (!formData.username.trim()) {
       newErrors.username = 'Tên đăng nhập không được để trống';
     } else if (formData.username.trim().length < 3) {
       newErrors.username = 'Tên đăng nhập phải có ít nhất 3 ký tự';
     }
 
-    // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email.trim()) {
       newErrors.email = 'Email không được để trống';
@@ -50,7 +42,6 @@ export default function RegisterPage() {
       newErrors.email = 'Email không đúng định dạng';
     }
 
-    // Validate password
     if (!formData.password) {
       newErrors.password = 'Mật khẩu không được để trống';
     } else if (formData.password.length < 6) {
@@ -76,10 +67,7 @@ export default function RegisterPage() {
         fullName: formData.fullName.trim() || undefined,
       });
 
-      // Lưu token và thông tin người dùng vào localStorage
       authService.saveAuthData(response.data);
-
-      // Chuyển hướng thẳng vào Dashboard (Auto-login sau khi đăng ký thành công)
       navigate('/dashboard');
     } catch (err) {
       const message =

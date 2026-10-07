@@ -3,13 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 import './Auth.css';
 
-/**
- * Trang Đăng nhập (LoginPage)
- * - Quản lý form nhập liệu: username & password
- * - Client-side validation: báo lỗi trực tiếp dưới ô nhập liệu
- * - Gọi authService.login() -> lưu JWT token vào localStorage
- * - Tự động điều hướng về /dashboard sau khi đăng nhập thành công
- */
 export default function LoginPage() {
   const navigate = useNavigate();
 
@@ -22,18 +15,15 @@ export default function LoginPage() {
   const [serverError, setServerError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Xử lý thay đổi input
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Xóa lỗi của trường đó khi người dùng bắt đầu gõ lại
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
     if (serverError) setServerError('');
   };
 
-  // Validate form phía client
   const validate = () => {
     const newErrors = {};
     if (!formData.username.trim()) {
@@ -46,7 +36,6 @@ export default function LoginPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Gửi request đăng nhập
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
@@ -60,10 +49,7 @@ export default function LoginPage() {
         password: formData.password,
       });
 
-      // Lưu token và thông tin người dùng vào localStorage
       authService.saveAuthData(response.data);
-
-      // Điều hướng về trang Dashboard
       navigate('/dashboard');
     } catch (err) {
       const message =
@@ -75,7 +61,6 @@ export default function LoginPage() {
     }
   };
 
-  // Hàm tiện ích: Điền nhanh tài khoản test để người dùng hoặc người phỏng vấn tiện bấm thử
   const fillCredentials = (username, password) => {
     setFormData({ username, password });
     setErrors({});
@@ -149,7 +134,6 @@ export default function LoginPage() {
           <Link to="/register">Đăng ký ngay</Link>
         </div>
 
-        {/* Khung tài khoản mẫu hỗ trợ demo */}
         <details className="demo-credentials-box">
           <summary>💡 Tài khoản mẫu dùng để test nhanh</summary>
           <div className="demo-credentials-content">
