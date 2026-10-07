@@ -58,7 +58,7 @@ public class AuthService {
                 .orElseThrow(() -> new AppException("Tên đăng nhập hoặc mật khẩu không chính xác", HttpStatus.UNAUTHORIZED));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new AppException("Tên đăng nhập hoặc mật khẩu không chính xác", HttpStatus.UNAUTHORIZED));
+            throw new AppException("Tên đăng nhập hoặc mật khẩu không chính xác", HttpStatus.UNAUTHORIZED);
         }
 
         String token = jwtUtil.generateToken(user.getUsername());
