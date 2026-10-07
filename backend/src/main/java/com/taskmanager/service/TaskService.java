@@ -2,6 +2,7 @@ package com.taskmanager.service;
 
 import com.taskmanager.dto.request.CreateTaskRequest;
 import com.taskmanager.dto.request.UpdateTaskRequest;
+import com.taskmanager.dto.response.PageResponse;
 import com.taskmanager.dto.response.TaskResponse;
 import com.taskmanager.entity.Task;
 import com.taskmanager.entity.User;
@@ -10,7 +11,13 @@ import com.taskmanager.enums.TaskStatus;
 import com.taskmanager.exception.AppException;
 import com.taskmanager.repository.TaskRepository;
 import com.taskmanager.repository.UserRepository;
+import com.taskmanager.specification.TaskSpecification;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -102,5 +109,40 @@ public class TaskService {
         }
 
         taskRepository.delete(task);
+    }
+
+    public PageResponse<TaskResponse> getTasks(
+            String keyword,
+            TaskStatus status,
+            TaskPriority priority,
+            int page,
+            int size,
+            String sortBy,
+            String sortDir) {
+        User currentUser = getCurrentUser();
+
+        String validSortBy = resolveSortField(sortBy);
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        int pageNumber = Math.max(0, page);
+        int pageSize = (size <= 0 || size > 100) ? 10 : size;
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(direction, validSortBy));
+
+        Specification<Task> spec = TaskSpecification.filterTasks(
+                currentUser.getId(), keyword, status, priority);
+
+        Page<Task> taskPage = taskRepository.findAll(spec, pageable);
+        Page<TaskResponse> responsePage = taskPage.map(TaskResponse::fromEntity);
+
+        return PageResponse.fromPage(responsePage);
+    }
+
+    private String resolveSortField(String sortBy) {
+        if (sortBy == null) {
+            return "createdAt";
+        }
+        return switch (sortBy) {
+            case "dueDate", "priority", "status", "title", "id" -> sortBy;
+            default -> "createdAt";
+        };
     }
 }

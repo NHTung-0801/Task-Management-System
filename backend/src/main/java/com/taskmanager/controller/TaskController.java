@@ -2,7 +2,10 @@ package com.taskmanager.controller;
 
 import com.taskmanager.dto.request.CreateTaskRequest;
 import com.taskmanager.dto.request.UpdateTaskRequest;
+import com.taskmanager.dto.response.PageResponse;
 import com.taskmanager.dto.response.TaskResponse;
+import com.taskmanager.enums.TaskPriority;
+import com.taskmanager.enums.TaskStatus;
 import com.taskmanager.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,6 +22,20 @@ import org.springframework.web.bind.annotation.*;
 public class TaskController {
 
     private final TaskService taskService;
+
+    @GetMapping
+    @Operation(summary = "Lấy danh sách công việc có tìm kiếm, lọc và phân trang")
+    public ResponseEntity<PageResponse<TaskResponse>> getTasks(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) TaskStatus status,
+            @RequestParam(required = false) TaskPriority priority,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        PageResponse<TaskResponse> response = taskService.getTasks(keyword, status, priority, page, size, sortBy, sortDir);
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping
     @Operation(summary = "Tạo công việc mới")
