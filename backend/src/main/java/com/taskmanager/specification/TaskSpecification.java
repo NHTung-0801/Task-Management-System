@@ -23,9 +23,7 @@ public class TaskSpecification {
 
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String pattern = "%" + keyword.trim().toLowerCase() + "%";
-                Predicate titlePredicate = cb.like(cb.lower(root.get("title")), pattern);
-                Predicate descPredicate = cb.like(cb.lower(root.get("description")), pattern);
-                predicates.add(cb.or(titlePredicate, descPredicate));
+                predicates.add(cb.like(cb.lower(root.get("title")), pattern));
             }
 
             if (status != null) {
