@@ -1,0 +1,67 @@
+# =============================================
+# Docker Compose — Chạy toàn bộ hệ thống bằng 1 lệnh:
+#   docker compose up -d
+#
+# Gồm 3 service:
+#   1. mysql     — Cơ sở dữ liệu MySQL 8
+#   2. backend   — Spring Boot API (port 8080)
+#   3. frontend  — React + Nginx (port 80)
+#
+# Lưu ý: Khi phát triển, có thể chỉ chạy MySQL:
+#   docker compose up mysql -d
+# =============================================
+
+services:
+  # === Database ===
+  mysql:
+    image: mysql:8.0
+    container_name: taskmanager-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME:-taskmanager}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-root}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # === Backend Spring Boot ===
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: taskmanager-backend
+    restart: unless-stopped
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-taskmanager}
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      JWT_SECRET: ${JWT_SECRET:-default-secret-key-for-dev-only}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # === Frontend React + Nginx ===
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: taskmanager-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
