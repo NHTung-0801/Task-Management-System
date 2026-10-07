@@ -1,0 +1,47 @@
+# =============================================
+# Cấu hình ứng dụng Task Manager Backend
+# =============================================
+
+spring:
+  application:
+    name: task-manager
+
+  # --- Kết nối Database ---
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:taskmanager}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # --- JPA / Hibernate ---
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Chỉ kiểm tra schema, KHÔNG tự tạo bảng (Flyway lo việc này)
+    show-sql: true         # Hiển thị câu SQL trong console khi debug
+    properties:
+      hibernate:
+        format_sql: true   # Format SQL cho dễ đọc
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  # --- Flyway Migration ---
+  flyway:
+    enabled: true
+    locations: classpath:db/migration  # Flyway tìm file V1__, V2__... ở đây
+    baseline-on-migrate: true
+
+# --- Server ---
+server:
+  port: ${SERVER_PORT:8080}
+
+# --- JWT ---
+jwt:
+  secret: ${JWT_SECRET:my-super-secret-key-for-development-only-change-in-production}
+  expiration: ${JWT_EXPIRATION:86400000}  # 24 giờ tính bằng milliseconds
+
+# --- Swagger / OpenAPI ---
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
