@@ -1,21 +1,21 @@
 export default function StatusBadge({ status }) {
   const config = {
     TODO: {
-      label: 'Chờ làm',
+      label: 'Chờ thực hiện',
       color: '#475569',
       bg: '#F1F5F9',
       border: '#E2E8F0',
       dot: '#94A3B8',
     },
     IN_PROGRESS: {
-      label: 'Đang làm',
+      label: 'Đang thực hiện',
       color: '#2563EB',
       bg: '#EFF6FF',
       border: '#BFDBFE',
       dot: '#3B82F6',
     },
     DONE: {
-      label: 'Hoàn thành',
+      label: 'Đã hoàn thành',
       color: '#16A34A',
       bg: '#F0FDF4',
       border: '#BBF7D0',

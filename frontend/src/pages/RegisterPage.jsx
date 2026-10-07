@@ -13,6 +13,7 @@ export default function RegisterPage() {
     fullName: '',
   });
 
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -83,7 +84,14 @@ export default function RegisterPage() {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <div className="auth-logo">+</div>
+          <div className="auth-logo">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="8.5" cy="7" r="4"></circle>
+              <line x1="20" y1="8" x2="20" y2="14"></line>
+              <line x1="23" y1="11" x2="17" y2="11"></line>
+            </svg>
+          </div>
           <h1 className="auth-title">Đăng ký tài khoản</h1>
           <p className="auth-subtitle">Bắt đầu quản lý công việc hiệu quả cùng Taskflow</p>
         </div>
@@ -106,7 +114,7 @@ export default function RegisterPage() {
               type="text"
               autoComplete="name"
               className="form-input"
-              placeholder="VD: Nguyen Van A"
+              placeholder="VD: Nguyễn Văn A"
               value={formData.fullName}
               onChange={handleChange}
               disabled={isLoading}
@@ -153,17 +161,38 @@ export default function RegisterPage() {
             <label className="form-label" htmlFor="password">
               Mật khẩu <span style={{ color: 'var(--color-danger)' }}>*</span>
             </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              className={`form-input ${errors.password ? 'input-error' : ''}`}
-              placeholder="Tối thiểu 6 ký tự"
-              value={formData.password}
-              onChange={handleChange}
-              disabled={isLoading}
-            />
+            <div className="password-input-wrapper">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                className={`form-input ${errors.password ? 'input-error' : ''}`}
+                placeholder="Tối thiểu 6 ký tự"
+                value={formData.password}
+                onChange={handleChange}
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                className="btn-toggle-visibility"
+                onClick={() => setShowPassword((prev) => !prev)}
+                title={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
+                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
+              >
+                {showPassword ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                )}
+              </button>
+            </div>
             {errors.password && <span className="field-error">{errors.password}</span>}
           </div>
 

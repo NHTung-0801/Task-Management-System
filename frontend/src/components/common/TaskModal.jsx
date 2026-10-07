@@ -1,4 +1,17 @@
 import { useState, useEffect } from 'react';
+import './TaskModal.css';
+
+const STATUS_OPTIONS = [
+  { value: 'TODO', label: 'Chờ làm', dotColor: '#94a3b8' },
+  { value: 'IN_PROGRESS', label: 'Đang làm', dotColor: '#3b82f6' },
+  { value: 'DONE', label: 'Hoàn thành', dotColor: '#10b981' },
+];
+
+const PRIORITY_OPTIONS = [
+  { value: 'LOW', label: 'Thấp', dotColor: '#3b82f6' },
+  { value: 'MEDIUM', label: 'Trung bình', dotColor: '#f59e0b' },
+  { value: 'HIGH', label: 'Cao', dotColor: '#ef4444' },
+];
 
 export default function TaskModal({
   isOpen,
@@ -48,6 +61,14 @@ export default function TaskModal({
     }
   };
 
+  const handleSelectStatus = (statusValue) => {
+    setFormData((prev) => ({ ...prev, status: statusValue }));
+  };
+
+  const handleSelectPriority = (priorityValue) => {
+    setFormData((prev) => ({ ...prev, priority: priorityValue }));
+  };
+
   const validate = () => {
     const newErrors = {};
     if (!formData.title.trim()) {
@@ -75,266 +96,165 @@ export default function TaskModal({
   };
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(15, 23, 42, 0.45)',
-        backdropFilter: 'blur(3px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-        padding: '16px',
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: '12px',
-          width: '100%',
-          maxWidth: '520px',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          maxHeight: '90vh',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="task-modal-container" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div
-          style={{
-            padding: '20px 24px',
-            borderBottom: '1px solid #F1F5F9',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-            {initialData ? 'Chỉnh sửa công việc' : 'Tạo công việc mới'}
-          </h2>
+        <div className="task-modal-header">
+          <div className="task-modal-title-wrap">
+            <div className="task-modal-icon-badge">
+              {initialData ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              )}
+            </div>
+            <h2 className="task-modal-title">
+              {initialData ? 'Chỉnh sửa công việc' : 'Tạo công việc mới'}
+            </h2>
+          </div>
           <button
             onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#94A3B8',
-              cursor: 'pointer',
-              fontSize: '1.2rem',
-              padding: '4px',
-              borderRadius: '6px',
-            }}
+            className="task-modal-close-btn"
+            title="Đóng cửa sổ"
+            aria-label="Đóng cửa sổ"
           >
-            ✕
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} style={{ padding: '24px', overflowY: 'auto' }}>
-          {/* Tiêu đề */}
-          <div style={{ marginBottom: '18px' }}>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '0.88rem',
-                fontWeight: 600,
-                color: '#334155',
-                marginBottom: '6px',
-              }}
-            >
-              Tiêu đề <span style={{ color: '#EF4444' }}>*</span>
-            </label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="Ví dụ: Thiết kế giao diện Dashboard"
-              style={{
-                width: '100%',
-                padding: '10px 14px',
-                borderRadius: '8px',
-                border: `1px solid ${errors.title ? '#EF4444' : '#CBD5E1'}`,
-                outline: 'none',
-                fontSize: '0.92rem',
-              }}
-              autoFocus
-            />
-            {errors.title && (
-              <span style={{ color: '#EF4444', fontSize: '0.8rem', marginTop: '4px', display: 'block' }}>
-                {errors.title}
-              </span>
-            )}
-          </div>
-
-          {/* Mô tả */}
-          <div style={{ marginBottom: '18px' }}>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '0.88rem',
-                fontWeight: 600,
-                color: '#334155',
-                marginBottom: '6px',
-              }}
-            >
-              Mô tả chi tiết
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows={3}
-              placeholder="Nhập ghi chú hoặc yêu cầu chi tiết của công việc..."
-              style={{
-                width: '100%',
-                padding: '10px 14px',
-                borderRadius: '8px',
-                border: '1px solid #CBD5E1',
-                outline: 'none',
-                fontSize: '0.92rem',
-                resize: 'vertical',
-              }}
-            />
-          </div>
-
-          {/* Hàng 2 cột: Trạng thái & Mức ưu tiên */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '18px' }}>
-            <div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '0.88rem',
-                  fontWeight: 600,
-                  color: '#334155',
-                  marginBottom: '6px',
-                }}
-              >
-                Trạng thái
+        <form onSubmit={handleSubmit}>
+          <div className="task-modal-body">
+            {/* Tiêu đề */}
+            <div className="modal-form-group">
+              <label className="modal-label" htmlFor="task-title-input">
+                Tiêu đề công việc <span className="required-asterisk">*</span>
               </label>
-              <select
-                name="status"
-                value={formData.status}
+              <input
+                id="task-title-input"
+                type="text"
+                name="title"
+                value={formData.title}
                 onChange={handleChange}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
-                  outline: 'none',
-                  fontSize: '0.92rem',
-                  backgroundColor: '#FFFFFF',
-                }}
-              >
-                <option value="TODO">Chờ làm (To Do)</option>
-                <option value="IN_PROGRESS">Đang làm (In Progress)</option>
-                <option value="DONE">Hoàn thành (Done)</option>
-              </select>
+                placeholder="Ví dụ: Thiết kế giao diện Dashboard"
+                className={`modal-input ${errors.title ? 'error' : ''}`}
+                autoFocus
+              />
+              {errors.title && <span className="modal-error-msg">{errors.title}</span>}
             </div>
 
-            <div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '0.88rem',
-                  fontWeight: 600,
-                  color: '#334155',
-                  marginBottom: '6px',
-                }}
-              >
-                Mức ưu tiên
+            {/* Mô tả */}
+            <div className="modal-form-group">
+              <label className="modal-label" htmlFor="task-desc-input">
+                Mô tả chi tiết
               </label>
-              <select
-                name="priority"
-                value={formData.priority}
+              <textarea
+                id="task-desc-input"
+                name="description"
+                value={formData.description}
                 onChange={handleChange}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
-                  outline: 'none',
-                  fontSize: '0.92rem',
-                  backgroundColor: '#FFFFFF',
-                }}
-              >
-                <option value="LOW">🔵 Thấp (Low)</option>
-                <option value="MEDIUM">🟡 Trung bình (Medium)</option>
-                <option value="HIGH">🔴 Cao (High)</option>
-              </select>
+                rows={3}
+                placeholder="Nhập ghi chú hoặc yêu cầu chi tiết cho công việc này..."
+                className="modal-textarea"
+              />
             </div>
-          </div>
 
-          {/* Hạn hoàn thành */}
-          <div style={{ marginBottom: '24px' }}>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '0.88rem',
-                fontWeight: 600,
-                color: '#334155',
-                marginBottom: '6px',
-              }}
-            >
-              Hạn chót (Deadline)
-            </label>
-            <input
-              type="date"
-              name="dueDate"
-              value={formData.dueDate}
-              onChange={handleChange}
-              style={{
-                width: '100%',
-                padding: '10px 14px',
-                borderRadius: '8px',
-                border: '1px solid #CBD5E1',
-                outline: 'none',
-                fontSize: '0.92rem',
-              }}
-            />
+            {/* Trạng thái & Mức ưu tiên dạng Segmented Buttons */}
+            <div className="modal-grid-row">
+              <div className="modal-form-group">
+                <label className="modal-label">Trạng thái</label>
+                <div className="segmented-control">
+                  {STATUS_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`segmented-btn ${formData.status === opt.value ? 'active' : ''}`}
+                      onClick={() => handleSelectStatus(opt.value)}
+                    >
+                      <span
+                        className="segmented-dot"
+                        style={{ backgroundColor: opt.dotColor }}
+                      />
+                      <span>{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="modal-form-group">
+                <label className="modal-label">Mức ưu tiên</label>
+                <div className="segmented-control">
+                  {PRIORITY_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`segmented-btn ${formData.priority === opt.value ? 'active' : ''}`}
+                      onClick={() => handleSelectPriority(opt.value)}
+                    >
+                      <span
+                        className="segmented-dot"
+                        style={{ backgroundColor: opt.dotColor }}
+                      />
+                      <span>{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Hạn hoàn thành */}
+            <div className="modal-form-group">
+              <label className="modal-label" htmlFor="task-due-date-input">
+                Hạn hoàn thành
+              </label>
+              <input
+                id="task-due-date-input"
+                type="date"
+                name="dueDate"
+                value={formData.dueDate}
+                onChange={handleChange}
+                className="modal-input"
+              />
+            </div>
           </div>
 
           {/* Footer Buttons */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+          <div className="task-modal-footer">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              style={{
-                padding: '9px 18px',
-                borderRadius: '8px',
-                border: '1px solid #CBD5E1',
-                backgroundColor: '#FFFFFF',
-                color: '#475569',
-                fontWeight: 600,
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-              }}
+              className="btn-modal-cancel"
             >
               Hủy bỏ
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              style={{
-                padding: '9px 20px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: '#4F46E5',
-                color: '#FFFFFF',
-                fontWeight: 600,
-                fontSize: '0.9rem',
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                opacity: isSubmitting ? 0.7 : 1,
-              }}
+              className="btn-modal-submit"
             >
-              {isSubmitting ? 'Đang lưu...' : initialData ? 'Cập nhật' : 'Tạo mới'}
+              {isSubmitting ? (
+                <>
+                  <div className="modal-spinner" />
+                  <span>Đang lưu...</span>
+                </>
+              ) : (
+                <>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>{initialData ? 'Cập nhật' : 'Tạo mới'}</span>
+                </>
+              )}
             </button>
           </div>
         </form>
