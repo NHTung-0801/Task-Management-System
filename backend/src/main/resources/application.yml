@@ -35,7 +35,7 @@ server:
 
 # --- JWT ---
 jwt:
-  secret: ${JWT_SECRET:my-super-secret-key-for-development-only-change-in-production}
+  secret: ${JWT_SECRET:dGFza21hbmFnZXItc2VjcmV0LWtleS1mb3ItZGV2ZWxvcG1lbnQtb25seS0yMDI2}
   expiration: ${JWT_EXPIRATION:86400000}  # 24 giờ tính bằng milliseconds
 
 # --- Swagger / OpenAPI ---
