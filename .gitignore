@@ -2,10 +2,9 @@
 # Cấu hình bỏ qua riêng theo yêu cầu người dùng
 # ==========================================
 .agents/
-docs/
 AGENTS.md
-# Frontend: tạm chặn — sẽ mở khi bắt đầu Sprint 2 (xây giao diện)
-frontend/
+# Kế hoạch tổng thể (không đưa lên git theo yêu cầu)
+docs/ke-hoach/
 
 # ==========================================
 # Môi trường & Bảo mật (Secrets)
