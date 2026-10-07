@@ -20,6 +20,14 @@ export default function DashboardPage() {
     doneTasks: 0,
   });
 
+  const [distribution, setDistribution] = useState({
+    high: 0,
+    medium: 0,
+    low: 0,
+    urgentCount: 0,
+    onTrackCount: 0,
+  });
+
   const [upcomingTasks, setUpcomingTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,12 +38,51 @@ export default function DashboardPage() {
   const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
-      const [statsRes, upcomingRes] = await Promise.all([
+      const [statsRes, upcomingRes, allTasksRes] = await Promise.all([
         dashboardService.getStats(),
-        dashboardService.getUpcomingTasks(5),
+        dashboardService.getUpcomingTasks(6),
+        taskService.getTasks({ size: 100 }),
       ]);
+
       setStats(statsRes.data || { totalTasks: 0, todoTasks: 0, inProgressTasks: 0, doneTasks: 0 });
       setUpcomingTasks(upcomingRes.data || []);
+
+      const taskList = allTasksRes.data?.content || [];
+      let high = 0;
+      let medium = 0;
+      let low = 0;
+      let urgent = 0;
+      let onTrack = 0;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      taskList.forEach((t) => {
+        if (t.priority === 'HIGH') high++;
+        else if (t.priority === 'LOW') low++;
+        else medium++;
+
+        if (t.status !== 'DONE' && t.dueDate) {
+          const due = new Date(t.dueDate);
+          due.setHours(0, 0, 0, 0);
+          const diff = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
+          if (diff <= 1) {
+            urgent++;
+          } else {
+            onTrack++;
+          }
+        } else {
+          onTrack++;
+        }
+      });
+
+      setDistribution({
+        high,
+        medium,
+        low,
+        urgentCount: urgent,
+        onTrackCount: onTrack,
+      });
     } catch (err) {
       console.error('Lỗi khi tải dữ liệu Dashboard:', err);
       setToast({
@@ -72,8 +119,13 @@ export default function DashboardPage() {
   const completionRate =
     stats.totalTasks > 0 ? Math.round((stats.doneTasks / stats.totalTasks) * 100) : 0;
 
+  const totalDist = distribution.high + distribution.medium + distribution.low || 1;
+  const highPct = Math.round((distribution.high / totalDist) * 100);
+  const mediumPct = Math.round((distribution.medium / totalDist) * 100);
+  const lowPct = Math.max(0, 100 - highPct - mediumPct);
+
   const getDeadlineInfo = (dueDate) => {
-    if (!dueDate) return { text: 'Không có deadline', urgent: false };
+    if (!dueDate) return { text: 'Không có hạn chót', urgent: false };
     const target = new Date(dueDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -100,38 +152,23 @@ export default function DashboardPage() {
   };
 
   return (
-    <AppLayout
-      title="Dashboard"
-      extraAction={
-        <button
-          onClick={() => setIsTaskModalOpen(true)}
-          className="btn-primary"
-          id="btn-create-task-dashboard"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          <span>Tạo công việc</span>
-        </button>
-      }
-    >
+    <AppLayout title="Dashboard">
       <div className="dashboard-container">
         {/* Welcome Banner */}
         <div className="welcome-banner">
           <div className="welcome-info">
-            <h2>Xin chào, {currentUser.fullName || currentUser.username || 'Bạn'}! 👋</h2>
+            <h2>Xin chào, {currentUser.fullName || currentUser.username || 'Bạn'}!</h2>
             <p>
               Chào mừng bạn trở lại với Taskflow. Dưới đây là bức tranh tổng quan về tiến độ các dự án
               và những công việc cần được ưu tiên xử lý sớm.
             </p>
           </div>
           <button onClick={() => setIsTaskModalOpen(true)} className="btn-welcome-cta">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
-            <span>+ Tạo công việc mới</span>
+            <span>Tạo công việc mới</span>
           </button>
         </div>
 
@@ -142,7 +179,7 @@ export default function DashboardPage() {
             <div className="stat-header">
               <span className="stat-title">Tổng số công việc</span>
               <div className="stat-icon total">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                   <polyline points="14 2 14 8 20 8"></polyline>
                   <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -161,9 +198,9 @@ export default function DashboardPage() {
           {/* Card 2: To Do */}
           <div className="stat-card">
             <div className="stat-header">
-              <span className="stat-title">Chờ làm (To Do)</span>
+              <span className="stat-title">Chờ thực hiện</span>
               <div className="stat-icon todo">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"></circle>
                   <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
@@ -177,13 +214,13 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Card 3: In Progress */}
+          {/* Card 3: In Progress - Progress loop icon instead of lightning bolt */}
           <div className="stat-card">
             <div className="stat-header">
-              <span className="stat-title">Đang làm (In Progress)</span>
+              <span className="stat-title">Đang thực hiện</span>
               <div className="stat-icon inprogress">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
                 </svg>
               </div>
             </div>
@@ -198,9 +235,9 @@ export default function DashboardPage() {
           {/* Card 4: Done */}
           <div className="stat-card">
             <div className="stat-header">
-              <span className="stat-title">Đã xong (Done)</span>
+              <span className="stat-title">Đã hoàn thành</span>
               <div className="stat-icon done">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                   <polyline points="22 4 12 14.01 9 11.01"></polyline>
                 </svg>
@@ -226,14 +263,19 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Two-Column Grid: Upcoming Deadlines & Quick Navigation */}
+        {/* Two-Column Grid: Upcoming Deadlines & Priority Distribution */}
         <div className="dashboard-grid-layout">
-          {/* Upcoming Deadlines Widget */}
-          <div className="section-card">
+          {/* Cột trái: Công việc sắp tới hạn (Tinh gọn, rõ ràng) */}
+          <div className="section-card upcoming-section">
             <div className="section-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '1.2rem' }}>⏰</span>
-                <h3 className="section-title">Công việc sắp tới hạn (Upcoming)</h3>
+              <div className="section-title-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <h3 className="section-title">Công việc sắp tới hạn</h3>
               </div>
               <Link to="/tasks" className="section-link">
                 <span>Xem tất cả</span>
@@ -250,12 +292,13 @@ export default function DashboardPage() {
                 <div className="skeleton-row" style={{ height: '40px' }}></div>
               </div>
             ) : upcomingTasks.length === 0 ? (
-              <div style={{ padding: '40px 20px', textAlign: 'center', color: '#64748B' }}>
-                <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🎉</div>
-                <h4 style={{ color: '#0F172A', margin: '0 0 4px 0' }}>Không có công việc nào sắp tới hạn!</h4>
-                <p style={{ fontSize: '0.88rem', margin: 0 }}>
-                  Bạn đã giải quyết tốt các deadline hoặc chưa đặt hạn chót cho các công việc.
-                </p>
+              <div className="empty-tasks-state">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                <h4>Không có công việc nào sắp tới hạn</h4>
+                <p>Tất cả tiến độ công việc đều đang được kiểm soát rất tốt.</p>
               </div>
             ) : (
               <div className="upcoming-tasks-list">
@@ -270,11 +313,6 @@ export default function DashboardPage() {
                         <div className="task-item-meta">
                           <PriorityBadge priority={task.priority} />
                           <StatusBadge status={task.status} />
-                          {task.description && (
-                            <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
-                              • {task.description.substring(0, 40)}...
-                            </span>
-                          )}
                         </div>
                       </div>
 
@@ -292,67 +330,104 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Quick Shortcuts & Navigation Widget */}
-          <div className="section-card">
+          {/* Cột phải: Phân bổ mức độ quan trọng & Sức khỏe tiến độ */}
+          <div className="section-card priority-section">
             <div className="section-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '1.2rem' }}>⚡</span>
-                <h3 className="section-title">Phím tắt nhanh</h3>
+              <div className="section-title-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10"></line>
+                  <line x1="12" y1="20" x2="12" y2="4"></line>
+                  <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                <h3 className="section-title">Phân bổ mức độ quan trọng</h3>
               </div>
             </div>
 
-            <div className="quick-actions-box">
-              <Link to="/kanban" className="quick-action-btn">
-                <div className="quick-action-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="5" height="18" rx="1"></rect>
-                    <rect x="10" y="3" width="5" height="12" rx="1"></rect>
-                    <rect x="17" y="3" width="5" height="15" rx="1"></rect>
-                  </svg>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div>Bảng Kanban kéo thả</div>
-                  <div style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 400 }}>
-                    Kéo thả thẻ thay đổi trạng thái
+            <div className="priority-insights-box">
+              {/* Stacked Segmented Progress Bar */}
+              <div className="priority-segmented-bar" title="Thanh phân bổ mức độ quan trọng">
+                <div
+                  className="segment-fill segment-high"
+                  style={{ width: `${highPct}%` }}
+                  title={`Ưu tiên cao: ${distribution.high} (${highPct}%)`}
+                />
+                <div
+                  className="segment-fill segment-medium"
+                  style={{ width: `${mediumPct}%` }}
+                  title={`Ưu tiên trung bình: ${distribution.medium} (${mediumPct}%)`}
+                />
+                <div
+                  className="segment-fill segment-low"
+                  style={{ width: `${lowPct}%` }}
+                  title={`Ưu tiên thấp: ${distribution.low} (${lowPct}%)`}
+                />
+              </div>
+
+              {/* Danh sách 3 mức ưu tiên */}
+              <div className="priority-breakdown-list">
+                <div className="priority-breakdown-row">
+                  <div className="priority-label-wrap">
+                    <span className="priority-dot dot-high" />
+                    <span className="priority-name">Ưu tiên cao</span>
+                  </div>
+                  <div className="priority-stats-wrap">
+                    <span className="priority-count">{distribution.high} công việc</span>
+                    <span className="priority-percentage">({highPct}%)</span>
                   </div>
                 </div>
-                <span style={{ color: '#94A3B8' }}>→</span>
-              </Link>
 
-              <Link to="/tasks" className="quick-action-btn">
-                <div className="quick-action-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="8" y1="6" x2="21" y2="6"></line>
-                    <line x1="8" y1="12" x2="21" y2="12"></line>
-                    <line x1="8" y1="18" x2="21" y2="18"></line>
-                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                  </svg>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div>Danh sách & Bộ lọc Task</div>
-                  <div style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 400 }}>
-                    Tìm kiếm, phân trang và xem dạng bảng
+                <div className="priority-breakdown-row">
+                  <div className="priority-label-wrap">
+                    <span className="priority-dot dot-medium" />
+                    <span className="priority-name">Ưu tiên trung bình</span>
+                  </div>
+                  <div className="priority-stats-wrap">
+                    <span className="priority-count">{distribution.medium} công việc</span>
+                    <span className="priority-percentage">({mediumPct}%)</span>
                   </div>
                 </div>
-                <span style={{ color: '#94A3B8' }}>→</span>
-              </Link>
 
-              <div
-                style={{
-                  backgroundColor: '#F8FAFC',
-                  borderRadius: '10px',
-                  padding: '16px',
-                  marginTop: '8px',
-                  border: '1px dashed #CBD5E1',
-                }}
-              >
-                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0F172A', marginBottom: '4px' }}>
-                  💡 Mẹo phỏng vấn
+                <div className="priority-breakdown-row">
+                  <div className="priority-label-wrap">
+                    <span className="priority-dot dot-low" />
+                    <span className="priority-name">Ưu tiên thấp</span>
+                  </div>
+                  <div className="priority-stats-wrap">
+                    <span className="priority-count">{distribution.low} công việc</span>
+                    <span className="priority-percentage">({lowPct}%)</span>
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#64748B', lineHeight: 1.5 }}>
-                  Dữ liệu Dashboard được tính toán thời gian thực qua Backend API có Composite Index, giúp tốc độ truy vấn luôn dưới 5ms.
+              </div>
+
+              {/* Tình trạng sức khỏe tiến độ */}
+              <div className="health-tracker-grid">
+                <div className="health-card urgent">
+                  <div className="health-card-header">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="12"></line>
+                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span>Cần chú ý gấp</span>
+                  </div>
+                  <div className="health-card-value">
+                    {distribution.urgentCount} <span>việc</span>
+                  </div>
+                  <div className="health-card-desc">Quá hạn hoặc tới hạn hôm nay</div>
+                </div>
+
+                <div className="health-card ontrack">
+                  <div className="health-card-header">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <span>Đúng tiến độ</span>
+                  </div>
+                  <div className="health-card-value">
+                    {distribution.onTrackCount} <span>việc</span>
+                  </div>
+                  <div className="health-card-desc">Trong thời hạn an toàn</div>
                 </div>
               </div>
             </div>
