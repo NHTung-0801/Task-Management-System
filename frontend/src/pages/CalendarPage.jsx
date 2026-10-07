@@ -270,11 +270,41 @@ export default function CalendarPage() {
   return (
     <AppLayout title="Calendar">
       <div className="calendar-page-container">
+        {/* Header Title & Primary Action */}
+        <div className="calendar-header">
+          <div className="calendar-header-info">
+            <h2>Lịch công việc</h2>
+            <p>Theo dõi và quản lý thời hạn hoàn thành công việc theo dòng thời gian</p>
+          </div>
+          <button
+            onClick={() => handleOpenCreateModal(selectedDate)}
+            className="btn-primary"
+            id="btn-create-task-calendar"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>Tạo công việc</span>
+          </button>
+        </div>
+
         <div className="calendar-top-bar">
-          <div className="calendar-nav-group">
-            <h2 className="calendar-month-title" style={{ textTransform: 'capitalize' }}>
+          <div className="calendar-title-wrap">
+            <h3 className="calendar-month-title" style={{ textTransform: 'capitalize' }}>
               {monthLabel}
-            </h2>
+            </h3>
+            <span className="calendar-month-badge">
+              {monthStats.total} công việc
+            </span>
+            {monthStats.overdue > 0 && (
+              <span className="calendar-overdue-badge">
+                {monthStats.overdue} quá hạn
+              </span>
+            )}
+          </div>
+
+          <div className="calendar-nav-controls">
             <button
               className="btn-nav-month"
               onClick={handlePrevMonth}
@@ -299,71 +329,13 @@ export default function CalendarPage() {
               Hôm nay
             </button>
           </div>
-
-          <div className="calendar-actions">
-            <button
-              className="btn-add-task-cal"
-              onClick={() => handleOpenCreateModal(selectedDate)}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              <span>+ Thêm công việc</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="calendar-stats-row">
-          <div className="cal-stat-card">
-            <div className="cal-stat-icon" style={{ background: '#EEF2FF', color: '#6366F1' }}>
-              📅
-            </div>
-            <div className="cal-stat-info">
-              <span className="cal-stat-value">{monthStats.total}</span>
-              <span className="cal-stat-label">Tổng hạn chót tháng</span>
-            </div>
-          </div>
-
-          <div className="cal-stat-card">
-            <div className="cal-stat-icon" style={{ background: '#FEF3C7', color: '#F59E0B' }}>
-              ⏳
-            </div>
-            <div className="cal-stat-info">
-              <span className="cal-stat-value">{monthStats.inProgress}</span>
-              <span className="cal-stat-label">Đang thực hiện</span>
-            </div>
-          </div>
-
-          <div className="cal-stat-card">
-            <div className="cal-stat-icon" style={{ background: '#DCFCE7', color: '#10B981' }}>
-              ✅
-            </div>
-            <div className="cal-stat-info">
-              <span className="cal-stat-value">{monthStats.done}</span>
-              <span className="cal-stat-label">Đã hoàn thành</span>
-            </div>
-          </div>
-
-          <div className="cal-stat-card">
-            <div className="cal-stat-icon" style={{ background: '#FEE2E2', color: '#EF4444' }}>
-              ⚠️
-            </div>
-            <div className="cal-stat-info">
-              <span className="cal-stat-value">{monthStats.overdue}</span>
-              <span className="cal-stat-label">Quá hạn cần chú ý</span>
-            </div>
-          </div>
         </div>
 
         <div className="calendar-layout">
           <div className="calendar-grid-card">
             <div className="calendar-weekdays-header">
-              {WEEKDAYS.map((day, idx) => (
-                <div
-                  key={day}
-                  className={`weekday-header-cell ${idx === 5 || idx === 6 ? 'weekend' : ''}`}
-                >
+              {WEEKDAYS.map((day) => (
+                <div key={day} className="weekday-header-cell">
                   {day}
                 </div>
               ))}
@@ -386,33 +358,35 @@ export default function CalendarPage() {
                     <div className="day-cell-top">
                       <span className="day-number">{cell.dayNumber}</span>
                       {dayTasks.length > 0 && (
-                        <span className="day-task-count-badge">{dayTasks.length}</span>
+                        <span className="day-task-count-badge">
+                          {dayTasks.length} việc
+                        </span>
                       )}
                     </div>
 
-                    <div className="day-tasks-list">
-                      {dayTasks.slice(0, 2).map((t) => (
-                        <div
-                          key={t.id}
-                          className={`task-cal-pill priority-${(t.priority || '').toLowerCase()} ${
-                            t.status === 'DONE' ? 'status-done' : ''
-                          }`}
-                          title={`${t.title} (${t.priority} • ${t.status})`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedDate(cell.dateKey);
-                            handleOpenEditModal(t);
-                          }}
-                        >
-                          {t.title}
+                    {dayTasks.length > 0 && (
+                      <div className="day-cell-content">
+                        <div className="day-dots-container">
+                          {dayTasks.slice(0, 4).map((t) => {
+                            let dotType = 'dot-medium';
+                            if (t.status === 'DONE') dotType = 'dot-done';
+                            else if (t.priority === 'HIGH') dotType = 'dot-high';
+                            else if (t.priority === 'LOW') dotType = 'dot-low';
+
+                            return (
+                              <span
+                                key={t.id}
+                                className={`cal-dot ${dotType}`}
+                                title={`${t.title} (${t.priority === 'HIGH' ? 'Cao' : t.priority === 'MEDIUM' ? 'Trung bình' : 'Thấp'} • ${t.status === 'DONE' ? 'Hoàn thành' : 'Chưa xong'})`}
+                              />
+                            );
+                          })}
+                          {dayTasks.length > 4 && (
+                            <span className="cal-dot-extra">+{dayTasks.length - 4}</span>
+                          )}
                         </div>
-                      ))}
-                      {dayTasks.length > 2 && (
-                        <div className="task-more-pill">
-                          +{dayTasks.length - 2} việc nữa
-                        </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -421,11 +395,39 @@ export default function CalendarPage() {
 
           <div className="day-details-panel">
             <div className="day-details-header">
-              <div>
+              <div className="day-details-title-wrap">
                 <h3 className="day-details-date-title">Chi tiết công việc</h3>
                 <p className="day-details-date-subtitle">
                   {formatDisplayDate(selectedDate)}
                 </p>
+                {selectedDayTasks.length > 0 && (
+                  <div className="day-progress-container">
+                    <div className="day-progress-info">
+                      <span className="day-progress-text">
+                        {selectedDayTasks.filter((t) => t.status === 'DONE').length} / {selectedDayTasks.length} hoàn thành
+                      </span>
+                      <span className="day-progress-percent">
+                        {Math.round(
+                          (selectedDayTasks.filter((t) => t.status === 'DONE').length /
+                            selectedDayTasks.length) *
+                            100
+                        )}%
+                      </span>
+                    </div>
+                    <div className="day-progress-bar-track">
+                      <div
+                        className="day-progress-bar-fill"
+                        style={{
+                          width: `${Math.round(
+                            (selectedDayTasks.filter((t) => t.status === 'DONE').length /
+                              selectedDayTasks.length) *
+                              100
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
               <button
                 className="btn-add-for-day"
@@ -442,7 +444,14 @@ export default function CalendarPage() {
 
             {selectedDayTasks.length === 0 ? (
               <div className="day-empty-state">
-                <div className="day-empty-icon">🏖️</div>
+                <div className="day-empty-icon-svg">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5">
+                    <rect x="3" y="4" width="18" height="18" rx="3" ry="3"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                </div>
                 <div className="day-empty-text">
                   Không có hạn chót công việc nào trong ngày này.
                 </div>
@@ -450,61 +459,90 @@ export default function CalendarPage() {
                   className="btn-empty-add"
                   onClick={() => handleOpenCreateModal(selectedDate)}
                 >
-                  + Thêm công việc
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span>Thêm công việc</span>
                 </button>
               </div>
             ) : (
               <div className="day-tasks-container">
-                {selectedDayTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className={`day-task-card ${task.status === 'DONE' ? 'is-done' : ''}`}
-                  >
-                    <div className="day-task-card-header">
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                        <input
-                          type="checkbox"
-                          checked={task.status === 'DONE'}
-                          onChange={() => handleToggleTaskStatus(task)}
-                          title="Đánh dấu hoàn thành"
-                          style={{ marginTop: '3px', cursor: 'pointer' }}
-                        />
-                        <div
+                {selectedDayTasks.map((task) => {
+                  const priorityClass = (task.priority || 'MEDIUM').toLowerCase();
+                  return (
+                    <div
+                      key={task.id}
+                      className={`day-task-card priority-accent-${priorityClass} ${
+                        task.status === 'DONE' ? 'is-done' : ''
+                      }`}
+                    >
+                      <div className="day-task-card-top">
+                        <button
+                          type="button"
+                          className={`custom-cal-checkbox ${task.status === 'DONE' ? 'checked' : ''}`}
+                          onClick={() => handleToggleTaskStatus(task)}
+                          title={task.status === 'DONE' ? 'Đánh dấu chưa hoàn thành' : 'Đánh dấu hoàn thành'}
+                          aria-label="Đổi trạng thái công việc"
+                        >
+                          {task.status === 'DONE' && (
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                          )}
+                        </button>
+
+                        <span
                           className="day-task-title"
                           onClick={() => handleOpenEditModal(task)}
+                          title="Bấm để chỉnh sửa"
                         >
                           {task.title}
+                        </span>
+
+                        <div className="day-task-ghost-actions">
+                          <button
+                            className="btn-ghost-action edit"
+                            onClick={() => handleOpenEditModal(task)}
+                            title="Chỉnh sửa công việc"
+                            aria-label="Chỉnh sửa công việc"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                          </button>
+                          <button
+                            className="btn-ghost-action delete"
+                            onClick={() => handleOpenDeleteModal(task)}
+                            title="Xóa công việc"
+                            aria-label="Xóa công việc"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                          </button>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="day-task-badges">
-                      <StatusBadge status={task.status} />
-                      <PriorityBadge priority={task.priority} />
-                    </div>
-
-                    {task.description && (
-                      <div className="day-task-desc" title={task.description}>
-                        {task.description}
+                      <div className="day-task-badges-row">
+                        <div className="badges-row-left">
+                          <StatusBadge status={task.status} />
+                        </div>
+                        <div className="badges-row-right">
+                          <PriorityBadge priority={task.priority} />
+                        </div>
                       </div>
-                    )}
 
-                    <div className="day-task-actions">
-                      <button
-                        className="btn-cal-action edit"
-                        onClick={() => handleOpenEditModal(task)}
-                      >
-                        Sửa
-                      </button>
-                      <button
-                        className="btn-cal-action delete"
-                        onClick={() => handleOpenDeleteModal(task)}
-                      >
-                        Xóa
-                      </button>
+                      {task.description && (
+                        <div className="day-task-desc" title={task.description}>
+                          {task.description}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

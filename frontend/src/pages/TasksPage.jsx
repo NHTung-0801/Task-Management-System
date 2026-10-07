@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import taskService from '../services/taskService';
+import dashboardService from '../services/dashboardService';
 import StatusBadge from '../components/common/StatusBadge';
 import PriorityBadge from '../components/common/PriorityBadge';
 import TaskModal from '../components/common/TaskModal';
@@ -9,13 +11,23 @@ import Toast from '../components/common/Toast';
 import './Tasks.css';
 
 export default function TasksPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialUrlKeyword = searchParams.get('keyword') || '';
+
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  const [keyword, setKeyword] = useState('');
-  const [debouncedKeyword, setDebouncedKeyword] = useState('');
+  const [stats, setStats] = useState({
+    totalTasks: 0,
+    todoTasks: 0,
+    inProgressTasks: 0,
+    doneTasks: 0,
+  });
+
+  const [keyword, setKeyword] = useState(initialUrlKeyword);
+  const [debouncedKeyword, setDebouncedKeyword] = useState(initialUrlKeyword);
   const [statusFilter, setStatusFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
   const [sortBy, setSortBy] = useState('createdAt');
@@ -41,6 +53,25 @@ export default function TasksPage() {
     }, 350);
     return () => clearTimeout(handler);
   }, [keyword]);
+
+  // Synchronize keyword when URL query param changes
+  useEffect(() => {
+    const q = searchParams.get('keyword') || '';
+    if (q !== keyword) {
+      setKeyword(q);
+      setDebouncedKeyword(q);
+      setPage(0);
+    }
+  }, [searchParams]);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await dashboardService.getStats();
+      if (res.data) setStats(res.data);
+    } catch (err) {
+      console.error('Lỗi khi tải thống kê tab:', err);
+    }
+  }, []);
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -73,7 +104,8 @@ export default function TasksPage() {
 
   useEffect(() => {
     fetchTasks();
-  }, [fetchTasks]);
+    fetchStats();
+  }, [fetchTasks, fetchStats]);
 
   const handleOpenCreateModal = () => {
     setEditingTask(null);
@@ -97,6 +129,7 @@ export default function TasksPage() {
       }
       setIsTaskModalOpen(false);
       fetchTasks();
+      fetchStats();
     } catch (err) {
       console.error('Lỗi khi lưu công việc:', err);
       setToast({
@@ -122,6 +155,7 @@ export default function TasksPage() {
       setIsDeleteModalOpen(false);
       setDeletingTask(null);
       fetchTasks();
+      fetchStats();
     } catch (err) {
       console.error('Lỗi khi xóa công việc:', err);
       setToast({
@@ -147,83 +181,191 @@ export default function TasksPage() {
     }
   };
 
-  const isOverdue = (dueDate, status) => {
-    if (!dueDate || status === 'DONE') return false;
-    const due = new Date(dueDate);
+  const renderDeadlineBadge = (dueDate, status) => {
+    if (!dueDate) return <span className="deadline-none">—</span>;
+    const target = new Date(dueDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return due < today;
+    target.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+    const formatted = formatDate(dueDate);
+
+    if (status === 'DONE') {
+      return (
+        <span className="deadline-badge done" title={`Đã hoàn thành - Hạn chót: ${formatted}`}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>{formatted}</span>
+        </span>
+      );
+    }
+
+    if (diffDays < 0) {
+      return (
+        <span className="deadline-badge overdue" title={`Quá hạn ${Math.abs(diffDays)} ngày`}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>Quá hạn ({formatted})</span>
+        </span>
+      );
+    }
+
+    if (diffDays === 0) {
+      return (
+        <span className="deadline-badge today" title="Hôm nay là hạn chót!">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span>Hôm nay ({formatted})</span>
+        </span>
+      );
+    }
+
+    if (diffDays === 1) {
+      return (
+        <span className="deadline-badge tomorrow" title="Hạn chót ngày mai!">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span>Ngày mai ({formatted})</span>
+        </span>
+      );
+    }
+
+    return (
+      <span className="deadline-badge normal" title={`Hạn chót: ${formatted}`}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        <span>{formatted}</span>
+      </span>
+    );
   };
 
   const handleResetFilters = () => {
     setKeyword('');
+    setDebouncedKeyword('');
     setStatusFilter('');
     setPriorityFilter('');
     setSortBy('createdAt');
     setSortDir('desc');
     setPage(0);
+    setSearchParams({}, { replace: true });
   };
 
   const isFiltered = keyword || statusFilter || priorityFilter || sortBy !== 'createdAt';
 
   return (
-    <AppLayout
-      title="My Tasks"
-      extraAction={
-        <button onClick={handleOpenCreateModal} className="btn-primary" id="btn-create-task-top">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          <span>Tạo công việc</span>
-        </button>
-      }
-    >
+    <AppLayout title="My Tasks">
       <div className="tasks-container">
-        {/* Subheader info */}
+        {/* Header Title */}
         <div className="tasks-header">
           <div className="tasks-header-info">
             <h2>Danh sách công việc</h2>
-            <p>Theo dõi tiến độ, lọc theo trạng thái và tối ưu hóa quy trình làm việc</p>
+            <p>Theo dõi tiến độ, quản lý mức độ ưu tiên và tối ưu hóa quy trình làm việc</p>
           </div>
+          <button onClick={handleOpenCreateModal} className="btn-primary" id="btn-create-task-main">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>Tạo công việc</span>
+          </button>
         </div>
 
-        {/* Filter Toolbar */}
+        {/* 1-Click Segmented Status Tabs */}
+        <div className="status-tabs-container">
+          <button
+            className={`status-tab ${statusFilter === '' ? 'active' : ''}`}
+            onClick={() => {
+              setStatusFilter('');
+              setPage(0);
+            }}
+          >
+            <span>Tất cả</span>
+            <span className="tab-count">{stats.totalTasks}</span>
+          </button>
+
+          <button
+            className={`status-tab ${statusFilter === 'TODO' ? 'active' : ''}`}
+            onClick={() => {
+              setStatusFilter('TODO');
+              setPage(0);
+            }}
+          >
+            <span className="tab-indicator todo" />
+            <span>Chờ thực hiện</span>
+            <span className="tab-count">{stats.todoTasks}</span>
+          </button>
+
+          <button
+            className={`status-tab ${statusFilter === 'IN_PROGRESS' ? 'active' : ''}`}
+            onClick={() => {
+              setStatusFilter('IN_PROGRESS');
+              setPage(0);
+            }}
+          >
+            <span className="tab-indicator inprogress" />
+            <span>Đang thực hiện</span>
+            <span className="tab-count">{stats.inProgressTasks}</span>
+          </button>
+
+          <button
+            className={`status-tab ${statusFilter === 'DONE' ? 'active' : ''}`}
+            onClick={() => {
+              setStatusFilter('DONE');
+              setPage(0);
+            }}
+          >
+            <span className="tab-indicator done" />
+            <span>Đã hoàn thành</span>
+            <span className="tab-count">{stats.doneTasks}</span>
+          </button>
+        </div>
+
+        {/* Unified 1-Line Filter Toolbar (No wrap / No rớt dòng) */}
         <div className="filter-toolbar">
           <div className="filter-group-left">
             {/* Search Input */}
             <div className="search-input-wrapper">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
               <input
                 type="text"
-                placeholder="Tìm theo tiêu đề hoặc mô tả..."
+                placeholder="Tìm kiếm theo tiêu đề..."
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 className="search-input"
                 id="search-task-input"
               />
+              {keyword && (
+                <button
+                  type="button"
+                  className="btn-clear-search"
+                  onClick={() => {
+                    setKeyword('');
+                    setSearchParams({}, { replace: true });
+                  }}
+                  title="Xóa tìm kiếm"
+                >
+                  ✕
+                </button>
+              )}
             </div>
 
-            {/* Status Filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setPage(0);
-              }}
-              className="filter-select"
-              id="filter-status-select"
-            >
-              <option value="">Tất cả trạng thái</option>
-              <option value="TODO">Chờ làm (To Do)</option>
-              <option value="IN_PROGRESS">Đang làm (In Progress)</option>
-              <option value="DONE">Hoàn thành (Done)</option>
-            </select>
-
-            {/* Priority Filter */}
+            {/* Priority Filter (Thuần Việt, không emoji) */}
             <select
               value={priorityFilter}
               onChange={(e) => {
@@ -234,9 +376,9 @@ export default function TasksPage() {
               id="filter-priority-select"
             >
               <option value="">Tất cả mức ưu tiên</option>
-              <option value="HIGH">🔴 Ưu tiên Cao</option>
-              <option value="MEDIUM">🟡 Ưu tiên Trung bình</option>
-              <option value="LOW">🔵 Ưu tiên Thấp</option>
+              <option value="HIGH">Ưu tiên Cao</option>
+              <option value="MEDIUM">Ưu tiên Trung bình</option>
+              <option value="LOW">Ưu tiên Thấp</option>
             </select>
 
             {/* Sort Select */}
@@ -259,19 +401,12 @@ export default function TasksPage() {
 
             {/* Reset Button */}
             {isFiltered && (
-              <button
-                onClick={handleResetFilters}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#4F46E5',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  padding: '6px 8px',
-                }}
-              >
-                Đặt lại
+              <button onClick={handleResetFilters} className="btn-reset-filter" title="Đặt lại bộ lọc">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="1 4 1 10 7 10"></polyline>
+                  <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                </svg>
+                <span>Đặt lại</span>
               </button>
             )}
           </div>
@@ -282,7 +417,7 @@ export default function TasksPage() {
               <button
                 onClick={() => setViewMode('table')}
                 className={`view-btn ${viewMode === 'table' ? 'active' : ''}`}
-                title="Dạng bảng"
+                title="Dạng bảng danh sách"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -293,7 +428,7 @@ export default function TasksPage() {
               <button
                 onClick={() => setViewMode('grid')}
                 className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-                title="Dạng lưới"
+                title="Dạng lưới thẻ"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="3" width="7" height="7"></rect>
@@ -331,12 +466,12 @@ export default function TasksPage() {
               </h3>
               <p className="empty-desc">
                 {isFiltered
-                  ? 'Hãy thử thay đổi từ khóa tìm kiếm hoặc bỏ bớt các bộ lọc đang chọn.'
+                  ? 'Hãy thử thay đổi từ khóa tìm kiếm hoặc bấm Đặt lại để xem tất cả.'
                   : 'Bắt đầu tổ chức công việc của bạn bằng cách tạo một task mới ngay bây giờ.'}
               </p>
               {isFiltered ? (
                 <button onClick={handleResetFilters} className="btn-primary">
-                  Xóa bộ lọc
+                  Đặt lại bộ lọc
                 </button>
               ) : (
                 <button onClick={handleOpenCreateModal} className="btn-primary">
@@ -351,24 +486,23 @@ export default function TasksPage() {
             <table className="tasks-table">
               <thead>
                 <tr>
-                  <th style={{ width: '35%' }}>Công việc</th>
-                  <th style={{ width: '15%' }}>Trạng thái</th>
-                  <th style={{ width: '15%' }}>Mức ưu tiên</th>
-                  <th style={{ width: '15%' }}>Hạn chót</th>
-                  <th style={{ width: '12%' }}>Ngày tạo</th>
+                  <th style={{ width: '42%' }}>Công việc</th>
+                  <th style={{ width: '16%' }}>Trạng thái</th>
+                  <th style={{ width: '16%' }}>Mức ưu tiên</th>
+                  <th style={{ width: '18%' }}>Hạn chót</th>
                   <th style={{ width: '8%', textAlign: 'center' }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {tasks.map((task) => (
-                  <tr key={task.id}>
+                  <tr
+                    key={task.id}
+                    onClick={() => handleOpenEditModal(task)}
+                    className="task-row"
+                    title="Nhấn để xem và chỉnh sửa chi tiết"
+                  >
                     <td className="task-title-cell">
                       <div className="task-title">{task.title}</div>
-                      {task.description && (
-                        <div className="task-desc" title={task.description}>
-                          {task.description}
-                        </div>
-                      )}
                     </td>
                     <td>
                       <StatusBadge status={task.status} />
@@ -377,18 +511,18 @@ export default function TasksPage() {
                       <PriorityBadge priority={task.priority} />
                     </td>
                     <td className="due-date-cell">
-                      <span>{formatDate(task.dueDate)}</span>
-                      {isOverdue(task.dueDate, task.status) && (
-                        <span className="overdue-tag">Quá hạn</span>
-                      )}
+                      {renderDeadlineBadge(task.dueDate, task.status)}
                     </td>
-                    <td>{formatDate(task.createdAt)}</td>
                     <td style={{ textAlign: 'center' }}>
-                      <div className="action-buttons" style={{ justifyContent: 'center' }}>
+                      <div
+                        className="action-buttons"
+                        style={{ justifyContent: 'center' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <button
                           onClick={() => handleOpenEditModal(task)}
                           className="btn-icon edit"
-                          title="Chỉnh sửa"
+                          title="Chỉnh sửa công việc"
                         >
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -398,7 +532,7 @@ export default function TasksPage() {
                         <button
                           onClick={() => handleOpenDeleteModal(task)}
                           className="btn-icon delete"
-                          title="Xóa"
+                          title="Xóa công việc"
                         >
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
@@ -416,15 +550,18 @@ export default function TasksPage() {
           /* Grid View */
           <div className="tasks-grid">
             {tasks.map((task) => (
-              <div key={task.id} className="task-grid-card">
+              <div
+                key={task.id}
+                className="task-grid-card"
+                onClick={() => handleOpenEditModal(task)}
+                title="Nhấn để xem và chỉnh sửa"
+              >
                 <div className="task-grid-header">
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="task-grid-title">{task.title}</div>
-                    {task.description && (
-                      <div className="task-grid-desc">{task.description}</div>
-                    )}
+                  <div className="task-grid-badges">
+                    <StatusBadge status={task.status} />
+                    <PriorityBadge priority={task.priority} />
                   </div>
-                  <div className="action-buttons">
+                  <div className="action-buttons" onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={() => handleOpenEditModal(task)}
                       className="btn-icon edit"
@@ -448,24 +585,10 @@ export default function TasksPage() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <StatusBadge status={task.status} />
-                  <PriorityBadge priority={task.priority} />
-                </div>
+                <div className="task-grid-title">{task.title}</div>
 
                 <div className="task-grid-footer">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                      <line x1="16" y1="2" x2="16" y2="6"></line>
-                      <line x1="8" y1="2" x2="8" y2="6"></line>
-                      <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
-                    <span>{formatDate(task.dueDate)}</span>
-                    {isOverdue(task.dueDate, task.status) && (
-                      <span className="overdue-tag">Quá hạn</span>
-                    )}
-                  </div>
+                  {renderDeadlineBadge(task.dueDate, task.status)}
                 </div>
               </div>
             ))}
@@ -487,7 +610,7 @@ export default function TasksPage() {
                   setPage(0);
                 }}
                 className="filter-select"
-                style={{ padding: '4px 8px', fontSize: '0.82rem' }}
+                style={{ padding: '0 8px', height: '34px', fontSize: '0.82rem' }}
               >
                 <option value={5}>5 / trang</option>
                 <option value={10}>10 / trang</option>

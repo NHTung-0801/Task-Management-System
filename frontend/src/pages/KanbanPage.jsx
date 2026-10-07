@@ -8,15 +8,16 @@ import Toast from '../components/common/Toast';
 import './Kanban.css';
 
 const COLUMNS = [
-  { id: 'TODO', label: 'Chờ làm (To Do)', indicator: 'todo' },
-  { id: 'IN_PROGRESS', label: 'Đang làm (In Progress)', indicator: 'in_progress' },
-  { id: 'DONE', label: 'Hoàn thành (Done)', indicator: 'done' },
+  { id: 'TODO', label: 'Chờ thực hiện', indicator: 'todo' },
+  { id: 'IN_PROGRESS', label: 'Đang thực hiện', indicator: 'in_progress' },
+  { id: 'DONE', label: 'Đã hoàn thành', indicator: 'done' },
 ];
 
 export default function KanbanPage() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState('');
 
   const [draggedTaskId, setDraggedTaskId] = useState(null);
   const [dragOverColumn, setDragOverColumn] = useState(null);
@@ -108,9 +109,9 @@ export default function KanbanPage() {
       });
 
       const statusLabels = {
-        TODO: 'Chờ làm',
-        IN_PROGRESS: 'Đang làm',
-        DONE: 'Hoàn thành',
+        TODO: 'Chờ thực hiện',
+        IN_PROGRESS: 'Đang thực hiện',
+        DONE: 'Đã hoàn thành',
       };
       setToast({
         message: `Đã chuyển "${task.title}" sang "${statusLabels[newStatus]}"!`,
@@ -198,63 +199,152 @@ export default function KanbanPage() {
     }
   };
 
-  const isOverdue = (dueDate, status) => {
-    if (!dueDate || status === 'DONE') return false;
-    const due = new Date(dueDate);
+  const renderDeadlineBadge = (dueDate, status) => {
+    if (!dueDate) return null;
+    const target = new Date(dueDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return due < today;
+    target.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+    const formatted = formatDate(dueDate);
+
+    if (status === 'DONE') {
+      return (
+        <span className="card-due-tag done" title={`Đã hoàn thành - Hạn: ${formatted}`}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>{formatted}</span>
+        </span>
+      );
+    }
+
+    if (diffDays < 0) {
+      return (
+        <span className="card-due-tag overdue" title={`Quá hạn ${Math.abs(diffDays)} ngày (${formatted})`}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>Quá hạn</span>
+        </span>
+      );
+    }
+
+    if (diffDays === 0) {
+      return (
+        <span className="card-due-tag today" title={`Hôm nay là hạn chót (${formatted})`}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span>Hôm nay</span>
+        </span>
+      );
+    }
+
+    if (diffDays === 1) {
+      return (
+        <span className="card-due-tag tomorrow" title={`Hạn chót ngày mai (${formatted})`}>
+          <span>Ngày mai</span>
+        </span>
+      );
+    }
+
+    return (
+      <span className="card-due-tag normal" title={`Hạn chót: ${formatted}`}>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+        </svg>
+        <span>{formatted}</span>
+      </span>
+    );
   };
 
   const filteredTasks = tasks.filter((task) => {
+    if (priorityFilter && task.priority !== priorityFilter) return false;
     if (!searchKeyword.trim()) return true;
     const q = searchKeyword.toLowerCase();
-    return (
-      task.title.toLowerCase().includes(q) ||
-      (task.description && task.description.toLowerCase().includes(q))
-    );
+    return task.title.toLowerCase().includes(q);
   });
 
   return (
-    <AppLayout
-      title="Projects"
-      extraAction={
-        <button
-          onClick={() => handleOpenCreateWithStatus('TODO')}
-          className="btn-primary"
-          id="btn-create-task-kanban"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          <span>Tạo công việc</span>
-        </button>
-      }
-    >
+    <AppLayout title="Projects">
       <div className="kanban-container">
         {/* Header Title */}
         <div className="kanban-header">
           <div className="kanban-header-info">
-            <h2>Quy trình làm việc (Kanban Board)</h2>
+            <h2>Quy trình làm việc</h2>
             <p>Kéo thả các thẻ công việc giữa các cột để cập nhật tiến độ tức thì</p>
           </div>
+          <button
+            onClick={() => handleOpenCreateWithStatus('TODO')}
+            className="btn-primary"
+            id="btn-create-task-kanban"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>Tạo công việc</span>
+          </button>
         </div>
 
-        {/* Toolbar */}
+        {/* Toolbar Cố định 1 hàng */}
         <div className="kanban-toolbar">
-          <div className="kanban-search-wrapper">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input
-              type="text"
-              placeholder="Lọc nhanh thẻ công việc..."
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-              className="kanban-search-input"
-            />
+          <div className="kanban-toolbar-left">
+            <div className="kanban-search-wrapper">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo tiêu đề..."
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                className="kanban-search-input"
+              />
+              {searchKeyword && (
+                <button
+                  type="button"
+                  className="btn-clear-kanban-search"
+                  onClick={() => setSearchKeyword('')}
+                  title="Xóa tìm kiếm"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <select
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+              className="kanban-priority-select"
+              title="Lọc theo mức ưu tiên"
+            >
+              <option value="">Tất cả mức ưu tiên</option>
+              <option value="HIGH">Ưu tiên Cao</option>
+              <option value="MEDIUM">Ưu tiên Trung bình</option>
+              <option value="LOW">Ưu tiên Thấp</option>
+            </select>
+
+            {(searchKeyword || priorityFilter) && (
+              <button
+                onClick={() => {
+                  setSearchKeyword('');
+                  setPriorityFilter('');
+                }}
+                className="btn-kanban-reset"
+                title="Đặt lại bộ lọc"
+              >
+                Đặt lại
+              </button>
+            )}
           </div>
 
           <div className="kanban-stats-summary">
@@ -271,9 +361,9 @@ export default function KanbanPage() {
           </div>
         </div>
 
-        {/* Kanban Board */}
+        {/* Kanban Board (3 Cột Cố Định Chiều Ngang 100%) */}
         {loading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+          <div className="kanban-board">
             <div className="kanban-column" style={{ padding: '20px' }}>
               <div className="skeleton-row" style={{ height: '80px' }}></div>
               <div className="skeleton-row" style={{ height: '80px' }}></div>
@@ -319,7 +409,7 @@ export default function KanbanPage() {
                     </button>
                   </div>
 
-                  {/* Cards Container */}
+                  {/* Cards Container (Cuộn dọc nội bộ) */}
                   <div className="column-cards">
                     {columnTasks.length === 0 ? (
                       <div className="column-empty-dropzone">
@@ -336,34 +426,30 @@ export default function KanbanPage() {
                           draggable={true}
                           onDragStart={(e) => handleDragStart(e, task)}
                           onDragEnd={handleDragEnd}
+                          onClick={() => handleOpenEdit(task)}
+                          title="Nhấp để xem và chỉnh sửa chi tiết"
                         >
+                          {/* Card Top: Thời gian (trái) + Mức ưu tiên (phải) */}
                           <div className="card-top">
-                            <PriorityBadge priority={task.priority} />
-                            <div className="card-actions">
-                              {/* Quick Move Select for Touch/Keyboard */}
-                              <select
-                                value={task.status}
-                                onChange={(e) => updateTaskStatus(task, e.target.value)}
-                                style={{
-                                  fontSize: '0.75rem',
-                                  padding: '2px 4px',
-                                  borderRadius: '4px',
-                                  border: '1px solid #E2E8F0',
-                                  color: '#64748B',
-                                  cursor: 'pointer',
-                                  backgroundColor: '#F8FAFC',
-                                }}
-                                title="Chuyển trạng thái nhanh"
-                              >
-                                <option value="TODO">To Do</option>
-                                <option value="IN_PROGRESS">In Progress</option>
-                                <option value="DONE">Done</option>
-                              </select>
+                            <div className="card-top-left">
+                              {renderDeadlineBadge(task.dueDate, task.status)}
+                            </div>
+                            <div className="card-top-right">
+                              <PriorityBadge priority={task.priority} />
+                            </div>
+                          </div>
 
+                          {/* Card Title */}
+                          <h4 className="card-title">{task.title}</h4>
+
+                          {/* Card Footer: Nút Sửa & Xóa đưa xuống cuối thay cho số thứ tự */}
+                          <div className="card-footer" onClick={(e) => e.stopPropagation()}>
+                            <div className="card-actions">
                               <button
                                 onClick={() => handleOpenEdit(task)}
                                 className="card-action-btn edit"
-                                title="Chỉnh sửa"
+                                title="Chỉnh sửa công việc"
+                                aria-label="Chỉnh sửa công việc"
                               >
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -374,7 +460,8 @@ export default function KanbanPage() {
                               <button
                                 onClick={() => handleOpenDelete(task)}
                                 className="card-action-btn delete"
-                                title="Xóa"
+                                title="Xóa công việc"
+                                aria-label="Xóa công việc"
                               >
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <polyline points="3 6 5 6 21 6"></polyline>
@@ -383,42 +470,23 @@ export default function KanbanPage() {
                               </button>
                             </div>
                           </div>
-
-                          <h4 className="card-title">{task.title}</h4>
-
-                          {task.description && (
-                            <p className="card-description" title={task.description}>
-                              {task.description}
-                            </p>
-                          )}
-
-                          <div className="card-footer">
-                            {task.dueDate ? (
-                              <div
-                                className={`card-due-date ${
-                                  isOverdue(task.dueDate, task.status) ? 'overdue' : ''
-                                }`}
-                              >
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                                </svg>
-                                <span>{formatDate(task.dueDate)}</span>
-                                {isOverdue(task.dueDate, task.status) && <span>(Quá hạn)</span>}
-                              </div>
-                            ) : (
-                              <span style={{ color: '#94A3B8' }}>Không có deadline</span>
-                            )}
-
-                            <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>
-                              #{task.id}
-                            </span>
-                          </div>
                         </div>
                       ))
                     )}
+
+                    {/* Nút mờ nhỏ thêm công việc ở cuối cột */}
+                    <button
+                      type="button"
+                      className="btn-quick-add-card"
+                      onClick={() => handleOpenCreateWithStatus(col.id)}
+                      title={`Thêm công việc vào ${col.label}`}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                      </svg>
+                      <span>Thêm công việc</span>
+                    </button>
                   </div>
                 </div>
               );
