@@ -149,13 +149,13 @@
 /* Column Container */
 .kanban-column {
   background-color: #F8FAFC;
-  border: 1px solid #E2E8F0;
+  border: 2px solid #E2E8F0;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
   min-height: 480px;
   height: auto;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   min-width: 0;
   box-sizing: border-box;
 }
@@ -163,6 +163,7 @@
 .kanban-column.drag-over {
   background-color: #EEF2FF;
   border: 2px dashed #6366F1;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.12);
 }
 
 .column-header {
@@ -310,9 +311,31 @@
 }
 
 .kanban-card.is-dragging {
-  opacity: 0.45;
-  border: 2px dashed #4F46E5;
+  opacity: 0.35;
+  background-color: #F1F5F9;
+  border: 2px dashed #94A3B8;
   box-shadow: none;
+  transform: scale(0.99);
+}
+
+/* Custom Drag Overlay - 100% rõ nét, mượt mà, vượt qua giới hạn mờ của Chrome */
+.kanban-drag-overlay {
+  position: fixed;
+  pointer-events: none;
+  z-index: 99999;
+  background-color: #FFFFFF;
+  border: 1.5px solid #6366F1;
+  border-radius: 10px;
+  padding: 14px 14px 12px 14px;
+  box-shadow: 0 20px 40px -6px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(99, 102, 241, 0.2);
+  transform: rotate(2.5deg) scale(1.03);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  opacity: 1 !important;
+  user-select: none;
+  will-change: left, top;
 }
 
 .card-top {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import AppLayout from '../components/layout/AppLayout';
 import taskService from '../services/taskService';
 import PriorityBadge from '../components/common/PriorityBadge';
@@ -20,7 +20,12 @@ export default function KanbanPage() {
   const [priorityFilter, setPriorityFilter] = useState('');
 
   const [draggedTaskId, setDraggedTaskId] = useState(null);
+  const [draggedTask, setDraggedTask] = useState(null);
   const [dragOverColumn, setDragOverColumn] = useState(null);
+
+  const overlayRef = useRef(null);
+  const dragOffsetRef = useRef({ x: 0, y: 0, width: 300 });
+  const initialPosRef = useRef({ left: 0, top: 0 });
 
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -52,14 +57,54 @@ export default function KanbanPage() {
     fetchTasks();
   }, [fetchTasks]);
 
+  // Lắng nghe di chuyển chuột khi đang kéo thẻ để di chuyển Custom Drag Overlay 60FPS không giật
+  useEffect(() => {
+    if (!draggedTask) return;
+
+    const onGlobalDragOver = (e) => {
+      e.preventDefault();
+      if (e.clientX === 0 && e.clientY === 0) return;
+      if (overlayRef.current) {
+        overlayRef.current.style.left = `${e.clientX - dragOffsetRef.current.x}px`;
+        overlayRef.current.style.top = `${e.clientY - dragOffsetRef.current.y}px`;
+      }
+    };
+
+    window.addEventListener('dragover', onGlobalDragOver);
+    return () => {
+      window.removeEventListener('dragover', onGlobalDragOver);
+    };
+  }, [draggedTask]);
+
   const handleDragStart = (e, task) => {
     e.dataTransfer.setData('text/plain', String(task.id));
     e.dataTransfer.effectAllowed = 'move';
+
+    // 1. Tạo 1 canvas 1x1 trong suốt để triệt tiêu hoàn toàn drag ghost mờ mặc định của Chrome
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    e.dataTransfer.setDragImage(canvas, 0, 0);
+
+    // 2. Tính toán vị trí chuột so với góc trái thẻ
+    const rect = e.currentTarget.getBoundingClientRect();
+    dragOffsetRef.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      width: rect.width,
+    };
+    initialPosRef.current = {
+      left: rect.left,
+      top: rect.top,
+    };
+
     setDraggedTaskId(task.id);
+    setDraggedTask(task);
   };
 
   const handleDragEnd = () => {
     setDraggedTaskId(null);
+    setDraggedTask(null);
     setDragOverColumn(null);
   };
 
@@ -83,6 +128,10 @@ export default function KanbanPage() {
 
     const taskIdStr = e.dataTransfer.getData('text/plain');
     const taskId = Number(taskIdStr || draggedTaskId);
+
+    setDraggedTaskId(null);
+    setDraggedTask(null);
+
     if (!taskId) return;
 
     const taskToMove = tasks.find((t) => t.id === taskId);
@@ -524,6 +573,29 @@ export default function KanbanPage() {
         type={toast.type}
         onClose={() => setToast({ message: '', type: 'success' })}
       />
+
+      {/* Custom Drag Overlay: Rõ nét 100%, không bị Chrome làm mờ */}
+      {draggedTask && (
+        <div
+          ref={overlayRef}
+          className="kanban-drag-overlay"
+          style={{
+            width: `${dragOffsetRef.current.width}px`,
+            left: `${initialPosRef.current.left}px`,
+            top: `${initialPosRef.current.top}px`,
+          }}
+        >
+          <div className="card-top">
+            <div className="card-top-left">
+              {renderDeadlineBadge(draggedTask.dueDate, draggedTask.status)}
+            </div>
+            <div className="card-top-right">
+              <PriorityBadge priority={draggedTask.priority} />
+            </div>
+          </div>
+          <h4 className="card-title">{draggedTask.title}</h4>
+        </div>
+      )}
     </AppLayout>
   );
 }

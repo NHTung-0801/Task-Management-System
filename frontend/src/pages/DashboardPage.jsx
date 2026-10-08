@@ -66,7 +66,7 @@ export default function DashboardPage() {
           const due = new Date(t.dueDate);
           due.setHours(0, 0, 0, 0);
           const diff = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
-          if (diff <= 1) {
+          if (diff <= 2) {
             urgent++;
           } else {
             onTrack++;
@@ -148,7 +148,10 @@ export default function DashboardPage() {
     if (diffDays === 1) {
       return { text: `Hạn chót ngày mai (${dateFormatted})`, urgent: true };
     }
-    return { text: `Còn ${diffDays} ngày (${dateFormatted})`, urgent: diffDays <= 3 };
+    if (diffDays === 2) {
+      return { text: `Còn 2 ngày (${dateFormatted})`, urgent: true };
+    }
+    return { text: `Còn ${diffDays} ngày (${dateFormatted})`, urgent: false };
   };
 
   return (
@@ -413,7 +416,7 @@ export default function DashboardPage() {
                   <div className="health-card-value">
                     {distribution.urgentCount} <span>việc</span>
                   </div>
-                  <div className="health-card-desc">Quá hạn hoặc tới hạn hôm nay</div>
+                  <div className="health-card-desc">Quá hạn hoặc tới hạn trong 2 ngày</div>
                 </div>
 
                 <div className="health-card ontrack">

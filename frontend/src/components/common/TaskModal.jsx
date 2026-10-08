@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import SelectDropdown from './SelectDropdown';
 import './TaskModal.css';
 
 const STATUS_OPTIONS = [
@@ -168,46 +169,30 @@ export default function TaskModal({
               />
             </div>
 
-            {/* Trạng thái & Mức ưu tiên dạng Segmented Buttons */}
+            {/* Trạng thái & Mức ưu tiên dạng Dropdown mượt mà */}
             <div className="modal-grid-row">
               <div className="modal-form-group">
-                <label className="modal-label">Trạng thái</label>
-                <div className="segmented-control">
-                  {STATUS_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      className={`segmented-btn ${formData.status === opt.value ? 'active' : ''}`}
-                      onClick={() => handleSelectStatus(opt.value)}
-                    >
-                      <span
-                        className="segmented-dot"
-                        style={{ backgroundColor: opt.dotColor }}
-                      />
-                      <span>{opt.label}</span>
-                    </button>
-                  ))}
-                </div>
+                <label className="modal-label" htmlFor="task-status-select">
+                  Trạng thái
+                </label>
+                <SelectDropdown
+                  id="task-status-select"
+                  value={formData.status}
+                  options={STATUS_OPTIONS}
+                  onChange={handleSelectStatus}
+                />
               </div>
 
               <div className="modal-form-group">
-                <label className="modal-label">Mức ưu tiên</label>
-                <div className="segmented-control">
-                  {PRIORITY_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      className={`segmented-btn ${formData.priority === opt.value ? 'active' : ''}`}
-                      onClick={() => handleSelectPriority(opt.value)}
-                    >
-                      <span
-                        className="segmented-dot"
-                        style={{ backgroundColor: opt.dotColor }}
-                      />
-                      <span>{opt.label}</span>
-                    </button>
-                  ))}
-                </div>
+                <label className="modal-label" htmlFor="task-priority-select">
+                  Mức ưu tiên
+                </label>
+                <SelectDropdown
+                  id="task-priority-select"
+                  value={formData.priority}
+                  options={PRIORITY_OPTIONS}
+                  onChange={handleSelectPriority}
+                />
               </div>
             </div>
 
