@@ -1,0 +1,10 @@
+# Auto detect text files and perform LF normalization
+* text=auto eol=lf
+
+# Ensure shell scripts and wrappers have LF line endings for Linux CI runners
+*.sh text eol=lf
+backend/mvnw text eol=lf
+
+# Windows batch files
+*.bat text eol=crlf
+*.cmd text eol=crlf

@@ -442,7 +442,11 @@ export default function CalendarPage() {
               </button>
             </div>
 
-            {selectedDayTasks.length === 0 ? (
+            {loading ? (
+              <div className="day-empty-state">
+                <div className="day-empty-text">Đang tải công việc...</div>
+              </div>
+            ) : selectedDayTasks.length === 0 ? (
               <div className="day-empty-state">
                 <div className="day-empty-icon-svg">
                   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5">

@@ -1,0 +1,105 @@
+name: CI Pipeline (Quality Gate)
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Hủy các workflow cũ nếu người dùng push commit mới liên tiếp trên cùng một nhánh
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ==========================================
+  # 1. BACKEND QUALITY GATE (Spring Boot / Maven / JUnit 5)
+  # ==========================================
+  backend-ci:
+    name: Backend CI (Java 17 / Maven / Tests)
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: taskmanager
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17 (Eclipse Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      - name: Grant Execute Permission to Maven Wrapper
+        run: chmod +x backend/mvnw
+
+      - name: Run Backend Unit & Integration Tests
+        working-directory: backend
+        env:
+          DB_HOST: localhost
+          DB_PORT: 3306
+          DB_NAME: taskmanager
+          DB_USERNAME: root
+          DB_PASSWORD: root
+          SERVER_PORT: 8080
+          JWT_SECRET: dGFza21hbmFnZXItc2VjcmV0LWtleS1mb3ItZGV2ZWxvcG1lbnQtb25seS0yMDI2
+          JWT_EXPIRATION: 86400000
+        run: ./mvnw clean test
+
+      - name: Upload Test Reports (nếu có lỗi xảy ra)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-surefire-reports
+          path: backend/target/surefire-reports/
+
+  # ==========================================
+  # 2. FRONTEND QUALITY GATE (Node 20 / Vite / React)
+  # ==========================================
+  frontend-ci:
+    name: Frontend CI (Node 20 / Lint / Build)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Check Code Quality (Lint)
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Build Production Bundle (Vite)
+        working-directory: frontend
+        env:
+          VITE_API_URL: http://localhost:8080
+        run: npm run build

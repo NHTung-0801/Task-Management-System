@@ -1,0 +1,25 @@
+# Git and config
+.git
+.gitignore
+.gitattributes
+.agents
+AGENTS.md
+
+# Build outputs
+**/target/
+**/dist/
+**/node_modules/
+
+# Environment and sensitive data
+.env
+.env.local
+*.env
+!.env.example
+
+# IDE & OS
+.idea/
+.vscode/
+*.iml
+*.log
+.DS_Store
+Thumbs.db
