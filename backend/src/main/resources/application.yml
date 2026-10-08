@@ -3,7 +3,7 @@ spring:
     name: task-manager
 
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:taskmanager}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:taskmanager}?useSSL=${DB_SSL:false}&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
