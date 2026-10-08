@@ -101,7 +101,7 @@ export default function RegisterPage() {
             </svg>
           </div>
           <h1 className="auth-title">Đăng ký tài khoản</h1>
-          <p className="auth-subtitle">Bắt đầu quản lý công việc hiệu quả cùng Taskflow</p>
+          <p className="auth-subtitle">Taskflow - Hệ thống Quản lý Công việc cá nhân</p>
         </div>
 
         {serverError && (

@@ -72,7 +72,7 @@ export default function LoginPage() {
             </svg>
           </div>
           <h1 className="auth-title">Đăng nhập</h1>
-          <p className="auth-subtitle">Hệ thống Quản lý Công việc - Taskflow</p>
+          <p className="auth-subtitle">Taskflow - Hệ thống Quản lý Công việc cá nhân</p>
         </div>
 
         {serverError && (

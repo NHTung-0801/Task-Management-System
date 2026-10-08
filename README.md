@@ -14,10 +14,25 @@
 
 ![Dashboard Demo](images/dashboard-demo.png)
 
+### 🌐 Trải nghiệm trực tuyến ngay (Live Cloud Demo - Không cần cài đặt)
+
+| Thành phần | Nền tảng Cloud | Đường dẫn truy cập | Ghi chú |
+|---|---|---|---|
+| 🖥️ **Giao diện Web (Frontend)** | **Vercel** | [https://taskflow-core.vercel.app](https://taskflow-core.vercel.app) | React 19 + Vite 8 SPA |
+| 📡 **Backend API** | **Render** | [https://task-management-system-dvkr.onrender.com/api](https://task-management-system-dvkr.onrender.com/api) | Spring Boot 3 + Java 17 |
+| 📖 **Swagger / OpenAPI** | **Render** | [https://task-management-system-dvkr.onrender.com/swagger-ui.html](https://task-management-system-dvkr.onrender.com/swagger-ui.html) | Tài liệu API tương tác trực tiếp |
+| 🗄️ **Cơ sở dữ liệu** | **TiDB Cloud** | TiDB Serverless (AWS Singapore) | MySQL 8.0 Compatible |
+
+> 👤 **Tài khoản dùng thử ngay trên Live Demo:**
+> - `user01` / `Pass12345` (12 task mẫu - Kế hoạch học tập Tiếng Anh)
+> - `user02` / `Pass12345` (12 task mẫu - Kế hoạch phát triển ứng dụng Taskflow)
+> - *(Hoặc bạn có thể tự đăng ký tài khoản mới trực tiếp tại trang web)*
+
 ---
 
 ## 📌 Mục lục
 
+- [Trải nghiệm trực tuyến (Live Demo)](#-trải-nghiệm-trực-tuyến-ngay-live-cloud-demo---không-cần-cài-đặt)
 - [Công nghệ sử dụng](#-công-nghệ-sử-dụng)
 - [Cấu trúc dự án](#-cấu-trúc-dự-án)
 - [Hướng dẫn cài đặt và chạy](#-hướng-dẫn-cài-đặt-và-chạy)
@@ -37,12 +52,12 @@
 |---|---|---|
 | **Backend** | Java, Spring Boot, Spring Security, Spring Data JPA, JWT | Java 17, Spring Boot 3.3.5 |
 | **Frontend** | React, Vite, Axios, React Router | React 19, Vite 8 |
-| **Database** | MySQL | 8.0 |
+| **Database** | MySQL (Local) / TiDB Serverless (Cloud) | 8.0 Compatible |
 | **Migration** | Flyway | Tích hợp Spring Boot |
 | **API Docs** | Springdoc OpenAPI (Swagger UI) | Tự động sinh tại `/swagger-ui.html` |
 | **Testing** | JUnit 5, Mockito | 18 test cases |
 | **CI/CD** | GitHub Actions | Workflow `.github/workflows/ci.yml` |
-| **DevOps** | Docker, Docker Compose, Nginx | Multi-stage build |
+| **DevOps & Cloud** | Docker, Docker Compose, Nginx, Render, Vercel, TiDB Cloud | Multi-stage build & Cloud CD |
 
 ---
 
@@ -296,7 +311,7 @@ Khi khởi chạy lần đầu, Flyway tự động nạp dữ liệu mẫu gồ
 | B4 | Database migration & dữ liệu mẫu | ✅ | Flyway: `V1__init_schema.sql` (tạo bảng) + `V2__seed_sample_data.sql` (nạp 2 tài khoản test, 24 task mẫu thân thiện) |
 | B5 | Unit test hoặc integration test | ✅ | JUnit 5 + Mockito: **18/18 test cases pass 100%** bao gồm kiểm thử User Isolation Security |
 | B6 | CI pipeline chạy test khi push code | ✅ | GitHub Actions: Backend test (Java 17 + MySQL 8.0) & Frontend lint + build (Node 20), chạy song song |
-| B7 | Deploy demo lên cloud | ⏸️ Chưa triển khai | Đã có Dockerfile & Compose sẵn sàng, có thể deploy lên Railway/Vercel khi cần |
+| B7 | Deploy demo lên cloud | ✅ Hoàn thành | Triển khai 100% tự động: Frontend trên Vercel ([taskflow-core.vercel.app](https://taskflow-core.vercel.app)), Backend trên Render ([task-management-system-dvkr.onrender.com](https://task-management-system-dvkr.onrender.com)), Database trên TiDB Cloud Serverless |
 
 ### C. Tính năng bổ sung (ngoài đề bài, phục vụ trải nghiệm người dùng)
 
