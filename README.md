@@ -8,7 +8,11 @@
 
 Ứng dụng **quản lý công việc cá nhân** cho phép người dùng đăng ký tài khoản, quản lý toàn bộ vòng đời công việc (Tạo → Theo dõi → Hoàn thành), xem thống kê trên Dashboard và kéo thả trực quan trên Kanban Board.
 
-![Demo](https://raw.githubusercontent.com/TechVanguardVn/Task-Management-System/refs/heads/main/images/demo.jpeg)
+### 🖥️ Giao diện thực tế của ứng dụng (Kanban Board kéo thả & Dashboard thống kê)
+
+![Kanban Board Demo](images/kanban-demo.png)
+
+![Dashboard Demo](images/dashboard-demo.png)
 
 ---
 
